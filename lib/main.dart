@@ -1,80 +1,70 @@
 //https://flutterawesome.com/flutter-calendar-organized-neatly-into-a-table/
+//https://pub.dev/documentation/table_calendar/latest/table_calendar/table_calendar-library.html
 
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import './calendar.dart';
+import './analysis.dart';
 
 void main() => runApp(MyApp());
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  // initialize app
+  @override
+  State<StatefulWidget> createState() {
+    return MyAppState();
+  }
+}
+
+class MyAppState extends State<MyApp> {
+  final _pageOptions = [
+    CalendarPage(),
+    AnalysisPage()
+  ];
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: MyHomePage(),
-    );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  var temp = "";
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Saving data'),
-      ),
-      body: Column(
-        children: <Widget>[
-          
-          TextField(
-            onChanged: (text) {
-              temp = text;
-            },
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.calendar_today)),
+                Tab(icon: Icon(Icons.graphic_eq))
+              ],
+              labelPadding: EdgeInsets.only(top: 8),
+            )
           ),
-          Row(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RaisedButton(
-                  child: Text('Read'),
-                  onPressed: () {
-                    _read();
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RaisedButton(
-                  child: Text('Save'),
-                  onPressed: () {
-                    _save(temp);
-                  },
-                ),
-              ),
-            ],
-          )
-        ],
-      ),
+          body: TabBarView(
+            children: _pageOptions
+          ),
+        ),
+      )
     );
   }
 }
-      // Replace these two methods in the examples that follow
 
 Future<String> get _localPath async {
+  // get file location
   final directory = await getApplicationDocumentsDirectory();
   print(directory.path);
- return directory.path;
+  return directory.path;
 }
 
 Future<File> get _localFile async {
+  // get file
   final path = await _localPath;
   return File('$path/counter.txt');
 }
 
 _read() async {
+  // read function
   try {
     final file = await _localFile;
     String text = await file.readAsString();
@@ -85,8 +75,8 @@ _read() async {
 }
 
 _save(String something) async {
-  final directory = await getApplicationDocumentsDirectory();
-  final file = File('${directory.path}/counter.txt');
+  // write function
+  final file = await _localFile;
   String text1 = await file.readAsString();
   final text = text1 + something + ",";
   await file.writeAsString(text);
