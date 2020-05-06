@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+
+import './manageExercises.dart';
 
 class CalendarPage extends StatelessWidget {
   @override
@@ -21,7 +24,8 @@ class _CalendarPageState extends State<Calendar> {
   CalendarController _controller;
   Map<DateTime, List> _events;
   List _selectedEvents;
-  String _currentValue = 'A';
+  String _currentValue;
+  List<String> _exercises;
 
   @override
   void initState() {
@@ -38,6 +42,13 @@ class _CalendarPageState extends State<Calendar> {
     };
 
     _selectedEvents = _events[_selectedDay] ?? [];
+
+    _readAllExercise().then((s){
+      setState(() {
+        _exercises = s.toString().split(",");
+        _exercises.removeLast();
+      });
+    });
   }
 
   void _onDaySelected(DateTime day, List events) {
@@ -56,20 +67,19 @@ class _CalendarPageState extends State<Calendar> {
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
         return Container(
-            child: DropdownButton<String>(
-          value: _currentValue,
-          items: <String>['A', 'B', 'C', 'D'].map((String value) {
-            return new DropdownMenuItem<String>(
-              value: value,
-              child: new Text(value),
-            );
-          }).toList(),
+          child: DropdownButton<String>(
+            value: _currentValue,
+            items: _exercises.map((String value) {
+              return new DropdownMenuItem<String>(
+                value: value,
+                child: new Text(value),
+              );
+            }
+          ).toList(),
           onChanged: (String change) {
-            print(_currentValue);
             setState(() {
               _currentValue = change;
             });
-            print(_currentValue);
           },
         ));
       },
@@ -78,21 +88,23 @@ class _CalendarPageState extends State<Calendar> {
 
   createAddDialog(BuildContext context) {
     return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text("Exercise"),
-            content: createAddContent(context),
-            actions: <Widget>[
-              MaterialButton(
-                  elevation: 5.0,
-                  child: Text("Add"),
-                  onPressed: () {
-                    _save(_currentValue);
-                  })
-            ],
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Add Daily Exercise"),
+          content: createAddContent(context),
+          actions: <Widget>[
+            MaterialButton(
+              elevation: 5.0,
+              child: Text("Add"),
+              onPressed: () {
+                
+              }
+            )
+          ],
+        );
+      }
+    );
   }
 
   Widget _buildExerciseList() {
@@ -102,7 +114,6 @@ class _CalendarPageState extends State<Calendar> {
         return ListTile(
             title: Text(_selectedEvents[index].toString()),
             onTap: () {
-              _save(_selectedEvents[index]);
               print('Entry ${_selectedEvents[index]}');
             });
       },
@@ -124,51 +135,45 @@ class _CalendarPageState extends State<Calendar> {
     );
   }
 
+  Widget _speedDial(){
+    return SpeedDial(
+      animatedIcon: AnimatedIcons.menu_close,
+      animatedIconTheme: IconThemeData(size: 22.0),
+      children: [
+        SpeedDialChild(
+          child: Icon(Icons.add),
+          label: 'Add Exercise',
+          onTap: () => createAddDialog(context)
+        ),
+        SpeedDialChild(
+          child: Icon(Icons.edit),
+          label: 'Edit Exercises',
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => ManageExercisesPage()));
+          }
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(mainAxisSize: MainAxisSize.max, children: <Widget>[
-        _buildCalendar(),
-        Expanded(child: _buildExerciseList())
-      ]),
-      floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
-          onPressed: () {
-            createAddDialog(context);
-          }),
+      body: Column(
+        mainAxisSize: MainAxisSize.max, 
+        children: <Widget>[
+          _buildCalendar(),
+          Expanded(child: _buildExerciseList())
+        ], 
+      ),
+      floatingActionButton: _speedDial()
     );
   }
 }
 
-Future<String> get _localPath async {
-  // get file location
+Future<String> _readAllExercise() async {
   final directory = await getApplicationDocumentsDirectory();
-  print(directory.path);
-  return directory.path;
-}
-
-Future<File> get _localFile async {
-  // get file
-  final path = await _localPath;
-  return File('$path/counter.txt');
-}
-
-_read() async {
-  // read function
-  try {
-    final file = await _localFile;
-    String text = await file.readAsString();
-    print(text); // don't need
-  } catch (e) {
-    print("Couldn't read file");
-  }
-}
-
-_save(String newText) async {
-  // write function
-  final file = await _localFile;
-  String text1 = await file.readAsString();
-  final text = text1 + newText + ",\n";
-  await file.writeAsString(text);
-  print('saved'); // don't need
+  final file = File('${directory.path}/exercises.txt');
+  String text = await file.readAsString();
+  return text;
 }

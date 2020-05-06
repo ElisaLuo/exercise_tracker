@@ -47,15 +47,15 @@ class AnalysisPage extends StatelessWidget { // body
 Future<String> get _localPath async { // get file location
   final directory = await getApplicationDocumentsDirectory();
   print(directory.path);
- return directory.path;
+  return directory.path;
 }
 
 Future<File> get _localFile async { // get file
   final path = await _localPath;
-  return File('$path/counter.txt');
+  return File('$path/allExercises.txt');
 }
 
-_read() async { // read function
+/* _read() async { // read function
   try {
     final file = await _localFile;
     String text = await file.readAsString();
@@ -71,4 +71,23 @@ _save(String something) async { // write function
   final text = text1 + something + ",";
   await file.writeAsString(text);
   print('saved'); // don't need
-}
+} */
+
+_read() async {
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = File('${directory.path}/allEx.txt');
+          String text = await file.readAsString();
+          print(text);
+        } catch (e) {
+          print("Couldn't read file");
+        }
+      }
+
+      _save(String info) async {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/allEx.txt');
+        final text = info;
+        await file.writeAsString(text);
+        print('saved');
+      }
