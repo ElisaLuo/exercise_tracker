@@ -26,20 +26,25 @@ class _CalendarPageState extends State<Calendar> {
   List _selectedEvents;
   String _currentValue;
   List<String> _exercises;
+  DateTime _selectedDay = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _controller = CalendarController();
-    final _selectedDay = DateTime.now();
+    
 
     _events = {
-      DateTime(2020, 4, 1): ['New Year\'s Day'],
-      DateTime(2020, 1, 6): ['Epiphany'],
-      DateTime(2020, 2, 14): ['Valentine\'s Day'],
-      DateTime(2020, 4, 21): ['Easter Sunday'],
-      DateTime(2020, 4, 22): ['Easter Monday'],
+      DateTime(2020, 5, 1): ['New Year\'s Day'],
+      DateTime(2020, 5, 6): ['Epiphany'],
+      DateTime(2020, 5, 14): ['Valentine\'s Day'],
+      DateTime(2020, 5, 21): ['Easter Sunday'],
+      DateTime(2020, 5, 22): ['Easter Monday'],
     };
+
+    setState(() {
+      _events = _events;
+    });
 
     _selectedEvents = _events[_selectedDay] ?? [];
 
@@ -48,12 +53,6 @@ class _CalendarPageState extends State<Calendar> {
         _exercises = s.toString().split(",");
         _exercises.removeLast();
       });
-    });
-  }
-
-  void _onDaySelected(DateTime day, List events) {
-    setState(() {
-      _selectedEvents = events;
     });
   }
 
@@ -69,10 +68,14 @@ class _CalendarPageState extends State<Calendar> {
         return Container(
           child: DropdownButton<String>(
             value: _currentValue,
+            hint: new Text("Select Exercise"),
             items: _exercises.map((String value) {
               return new DropdownMenuItem<String>(
                 value: value,
-                child: new Text(value),
+                child: SizedBox( 
+                  width: 200.0,
+                  child: Text(value)
+                ),
               );
             }
           ).toList(),
@@ -87,6 +90,12 @@ class _CalendarPageState extends State<Calendar> {
   }
 
   createAddDialog(BuildContext context) {
+    _readAllExercise().then((s){
+      setState(() {
+        _exercises = s.toString().split(",");
+        _exercises.removeLast();
+      });
+    });
     return showDialog(
       context: context,
       builder: (context) {
@@ -98,25 +107,21 @@ class _CalendarPageState extends State<Calendar> {
               elevation: 5.0,
               child: Text("Add"),
               onPressed: () {
-                
+                if(_events.containsKey(_selectedDay)){
+                  _events[_selectedDay].add(_currentValue);
+                } else{
+                  _events[_selectedDay] = [];
+                  _events[_selectedDay].add(_currentValue);
+                }
+                setState(() {
+                  _events = _events;
+                });
+                Navigator.pop(context);
               }
             )
           ],
         );
       }
-    );
-  }
-
-  Widget _buildExerciseList() {
-    return ListView.builder(
-      itemCount: _selectedEvents.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-            title: Text(_selectedEvents[index].toString()),
-            onTap: () {
-              print('Entry ${_selectedEvents[index]}');
-            });
-      },
     );
   }
 
@@ -130,7 +135,29 @@ class _CalendarPageState extends State<Calendar> {
         formatButtonVisible: false,
       ),
       onDaySelected: (date, events) {
-        _onDaySelected(date, events);
+        setState(() {
+          _selectedEvents = events;
+          _selectedDay = date;
+        });
+      },
+    );
+  }
+
+  Widget _buildExerciseList() {
+    return ListView.builder(
+      itemCount: _selectedEvents.length+1,
+      itemBuilder: (context, index) {
+        if(index == 0){
+          return _buildCalendar();
+        } else{
+          return ListTile(
+            title: Text(_selectedEvents[index-1].toString()),
+            onTap: () {
+              print('Entry ${_selectedEvents[index-1]}');
+            }
+          );
+        }
+        
       },
     );
   }
@@ -155,16 +182,14 @@ class _CalendarPageState extends State<Calendar> {
       ],
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         mainAxisSize: MainAxisSize.max, 
         children: <Widget>[
-          _buildCalendar(),
           Expanded(child: _buildExerciseList())
-        ], 
+        ],
       ),
       floatingActionButton: _speedDial()
     );

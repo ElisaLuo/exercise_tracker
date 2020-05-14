@@ -1,11 +1,4 @@
-//https://flutterawesome.com/flutter-calendar-organized-neatly-into-a-table/
-//https://pub.dev/documentation/table_calendar/latest/table_calendar/table_calendar-library.html
-
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:table_calendar/table_calendar.dart';
 import './calendar.dart';
 import './analysis.dart';
 
@@ -28,6 +21,7 @@ class MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.teal),
       home: DefaultTabController(
         length: 2,

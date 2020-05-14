@@ -49,11 +49,39 @@ class _ManageExercisesState extends State<ManageExercises> { // body
                 setState(() {
                   _exercises[_exercises.length-1] = newExerciseController.text;
                 });
+                Navigator.pop(context);
               }
             )
           ],
         );
       }
+    );
+  }
+
+  _buildList(BuildContext context){
+    return ListView.builder(
+      itemCount: _exercises.length,
+      itemBuilder: (context, index){
+        return ListTile(
+          leading: Icon(Icons.fitness_center),
+          title: Text('${_exercises[index]}'),
+          trailing: RaisedButton(
+            child: Icon(Icons.cancel),
+            textColor: Colors.red[600],
+            color: Colors.white,
+            splashColor: Colors.white,
+            elevation: 0.0,
+            onPressed:(){
+              _deleteExercise(_exercises[index]);
+              _exercises.removeAt(index);
+              setState(() {
+                _exercises = _exercises;
+              });
+            }
+          ),
+          contentPadding: EdgeInsets.only(left: 30),
+        );
+      },
     );
   }
 
@@ -63,15 +91,7 @@ class _ManageExercisesState extends State<ManageExercises> { // body
       appBar: AppBar(
         title: Text("Manage Exercises"),
       ),
-      body: ListView.builder(
-        itemCount: _exercises.length,
-        itemBuilder: (context, index){
-          return Container(
-            height: 50,
-            child: Text(_exercises[index])
-          );
-        },
-      ),
+      body: _buildList(context),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: (){
@@ -100,4 +120,13 @@ _saveAllExercise(String texts) async {
   final text = text1 + texts + ",";
   await file.writeAsString(text);
   print('saved');
+}
+
+_deleteExercise(String texts) async{
+  final directory = await getApplicationDocumentsDirectory();
+  final file = File('${directory.path}/exercises.txt');
+  String text = await file.readAsString();
+  text = text.replaceFirst(texts+",", "");
+  await file.writeAsString(text);
+  print('saved change');
 }
