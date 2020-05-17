@@ -17,7 +17,7 @@ class ManageExercises extends StatefulWidget {
 }
 
 class _ManageExercisesState extends State<ManageExercises> { // body
-  List<String> _exercises = ['hi'];
+  List<String> _exercises = [''];
 
   @override
   void initState() {

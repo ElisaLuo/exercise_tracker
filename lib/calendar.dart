@@ -1,11 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
-
-import './manageExercises.dart';
 
 class CalendarPage extends StatelessWidget {
   @override
@@ -26,27 +24,18 @@ class _CalendarPageState extends State<Calendar> {
   List _selectedEvents;
   String _currentValue;
   List<String> _exercises;
-  DateTime _selectedDay = DateTime.now();
+  DateTime _selectedDay = new DateTime.now();
+  Map<String, dynamic> _exerciseContent;
+  bool _fileExists = false;
+  File jsonFile;
+  Directory dir;
 
   @override
   void initState() {
     super.initState();
-    _controller = CalendarController();
-    
+    _controller = CalendarController(); // calendar controller
 
-    _events = {
-      DateTime(2020, 5, 1): ['New Year\'s Day'],
-      DateTime(2020, 5, 6): ['Epiphany'],
-      DateTime(2020, 5, 14): ['Valentine\'s Day'],
-      DateTime(2020, 5, 21): ['Easter Sunday'],
-      DateTime(2020, 5, 22): ['Easter Monday'],
-    };
-
-    setState(() {
-      _events = _events;
-    });
-
-    _selectedEvents = _events[_selectedDay] ?? [];
+    _events = {};
 
     _readAllExercise().then((s){
       setState(() {
@@ -54,12 +43,65 @@ class _CalendarPageState extends State<Calendar> {
         _exercises.removeLast();
       });
     });
+
+    getApplicationDocumentsDirectory().then((Directory directory){
+      dir = directory;
+      jsonFile = File('${directory.path}/exerciseTrack.json');
+      _fileExists = jsonFile.existsSync();
+      if(_fileExists){
+        this.setState((){
+          _exerciseContent = json.decode(jsonFile.readAsStringSync());
+        });
+        for(var i = 0; i < _exerciseContent['data'].length; i++){
+          var temp = _exerciseContent['data'][i]['Date'].split(" ")[0].split("-");
+          var _currentDate = DateTime(int.parse(temp[0]), int.parse(temp[1]), int.parse(temp[2]));
+          if(_events[_currentDate] == null){
+            _events[_currentDate] = [];
+          }
+          _events[_currentDate].add(_exerciseContent['data'][i]['Exercise']);
+        }
+      }
+      print("finished");
+      setState(() {
+        _events = _events;
+      });
+    });
+
+    _selectedEvents = _events[_selectedDay] ?? [];
+    print("events"+_events.toString());
+  }
+
+  void createFile(Map<String, dynamic> content){
+    var temp = {"data":[content]};
+    print("create file");
+    File file = new File('${dir.path}/exerciseTrack.json');
+    file.createSync();
+    file.writeAsStringSync(json.encode(temp));
+    _fileExists = true;
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void writeExercise(DateTime date, String exercise, int seconds){
+    print("write to file");
+    Map<String, dynamic> content = {"Date": date.toString(), "Exercise": exercise, "Seconds": seconds};
+    if(_fileExists){
+      print("file exists");
+      Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
+      jsonFileContent['data'].add(content);
+      jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+    } else{
+      print("file no exist");
+      createFile(content);
+    }
+    this.setState((){
+      _exerciseContent = json.decode(jsonFile.readAsStringSync());
+    });
+    print(_exerciseContent);
   }
 
   createAddContent(BuildContext context) {
@@ -107,15 +149,7 @@ class _CalendarPageState extends State<Calendar> {
               elevation: 5.0,
               child: Text("Add"),
               onPressed: () {
-                if(_events.containsKey(_selectedDay)){
-                  _events[_selectedDay].add(_currentValue);
-                } else{
-                  _events[_selectedDay] = [];
-                  _events[_selectedDay].add(_currentValue);
-                }
-                setState(() {
-                  _events = _events;
-                });
+                writeExercise(_selectedDay, _currentValue, 60);
                 Navigator.pop(context);
               }
             )
@@ -148,6 +182,7 @@ class _CalendarPageState extends State<Calendar> {
       itemCount: _selectedEvents.length+1,
       itemBuilder: (context, index) {
         if(index == 0){
+          print("built");
           return _buildCalendar();
         } else{
           return ListTile(
@@ -162,26 +197,6 @@ class _CalendarPageState extends State<Calendar> {
     );
   }
 
-  Widget _speedDial(){
-    return SpeedDial(
-      animatedIcon: AnimatedIcons.menu_close,
-      animatedIconTheme: IconThemeData(size: 22.0),
-      children: [
-        SpeedDialChild(
-          child: Icon(Icons.add),
-          label: 'Add Exercise',
-          onTap: () => createAddDialog(context)
-        ),
-        SpeedDialChild(
-          child: Icon(Icons.edit),
-          label: 'Edit Exercises',
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => ManageExercisesPage()));
-          }
-        ),
-      ],
-    );
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,7 +206,12 @@ class _CalendarPageState extends State<Calendar> {
           Expanded(child: _buildExerciseList())
         ],
       ),
-      floatingActionButton: _speedDial()
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: (){
+          createAddDialog(context);
+        }
+      )
     );
   }
 }
