@@ -17,7 +17,7 @@ class ManageExercises extends StatefulWidget {
 }
 
 class _ManageExercisesState extends State<ManageExercises> { // body
-  List<String> _exercises = [''];
+  List<String> _exercises = [];
 
   @override
   void initState() {
@@ -46,8 +46,9 @@ class _ManageExercisesState extends State<ManageExercises> { // body
               child: Text("Add"),
               onPressed: () {
                 _saveAllExercise(newExerciseController.text);
+                _exercises.add(newExerciseController.text);
                 setState(() {
-                  _exercises[_exercises.length-1] = newExerciseController.text;
+                  _exercises = _exercises;
                 });
                 Navigator.pop(context);
               }

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 
 class CalendarPage extends StatelessWidget {
   @override
@@ -20,11 +21,14 @@ class Calendar extends StatefulWidget {
 
 class _CalendarPageState extends State<Calendar> {
   CalendarController _controller;
+  final secondsController = TextEditingController();
   Map<DateTime, List> _events;
   List _selectedEvents;
+  Map<DateTime, List> _completed;
+  List _selectedCompleted;
   String _currentValue;
   List<String> _exercises;
-  DateTime _selectedDay = new DateTime.now();
+  DateTime _selectedDay = DateFormat("yyyy-MM-dd").parse(DateTime.now().toString());
   Map<String, dynamic> _exerciseContent;
   bool _fileExists = false;
   File jsonFile;
@@ -34,16 +38,22 @@ class _CalendarPageState extends State<Calendar> {
   void initState() {
     super.initState();
     _controller = CalendarController(); // calendar controller
-
     _events = {};
-
+    _completed = {};
     _readAllExercise().then((s){
       setState(() {
         _exercises = s.toString().split(",");
         _exercises.removeLast();
       });
     });
+    
+    _fetchExercise();
 
+    _selectedEvents = _events[_selectedDay] ?? [];
+    _selectedCompleted = _completed[_selectedDay] ?? [];
+  }
+
+  Future _fetchExercise() async{
     getApplicationDocumentsDirectory().then((Directory directory){
       dir = directory;
       jsonFile = File('${directory.path}/exerciseTrack.json');
@@ -52,27 +62,33 @@ class _CalendarPageState extends State<Calendar> {
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync());
         });
-        for(var i = 0; i < _exerciseContent['data'].length; i++){
-          var temp = _exerciseContent['data'][i]['Date'].split(" ")[0].split("-");
-          var _currentDate = DateTime(int.parse(temp[0]), int.parse(temp[1]), int.parse(temp[2]));
-          if(_events[_currentDate] == null){
-            _events[_currentDate] = [];
+        var _keyslist = _exerciseContent['data'].keys.toList();
+        for(var i = 0; i < _keyslist.length; i++){
+          var _currentDate = _keyslist[i];
+          var _dateTime = DateFormat("yyyy-MM-dd").parse(_currentDate);
+          if(_events[_dateTime] == null){
+            _events[_dateTime] = [];
+            _completed[_dateTime] = [];
           }
-          _events[_currentDate].add(_exerciseContent['data'][i]['Exercise']);
+          for(var j = 0; j < _exerciseContent['data'][_currentDate].length; j++){
+            _completed[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Completed']);
+            _events[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Exercise'] + " (" + _exerciseContent['data'][_keyslist[i]][j]['Seconds'].toString() + "s)");
+          }
+          
         }
       }
-      print("finished");
       setState(() {
         _events = _events;
+        _completed = _completed;
+        _selectedEvents = _events[_selectedDay] ?? [];
+        _selectedCompleted = _completed[_selectedDay] ?? [];
       });
     });
-
-    _selectedEvents = _events[_selectedDay] ?? [];
-    print("events"+_events.toString());
   }
 
-  void createFile(Map<String, dynamic> content){
-    var temp = {"data":[content]};
+  void createFile(Map<String, dynamic> content, DateTime date){
+    String datestring = date.toString();
+    var temp = {"data": {datestring: [content]}};
     print("create file");
     File file = new File('${dir.path}/exerciseTrack.json');
     file.createSync();
@@ -83,20 +99,25 @@ class _CalendarPageState extends State<Calendar> {
   @override
   void dispose() {
     _controller.dispose();
+    secondsController.dispose();
     super.dispose();
   }
 
-  void writeExercise(DateTime date, String exercise, int seconds){
+  void writeExercise(DateTime date, String exercise, int seconds, int amount, bool completed){
+    date = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
     print("write to file");
-    Map<String, dynamic> content = {"Date": date.toString(), "Exercise": exercise, "Seconds": seconds};
+    Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Amount": amount, "Completed": completed};
     if(_fileExists){
       print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
-      jsonFileContent['data'].add(content);
+      if(jsonFileContent['data'][date.toString()] == null){
+        jsonFileContent['data'][date.toString()] = [];
+      }
+      jsonFileContent['data'][date.toString()].add(content);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
     } else{
       print("file no exist");
-      createFile(content);
+      createFile(content, date);
     }
     this.setState((){
       _exerciseContent = json.decode(jsonFile.readAsStringSync());
@@ -104,29 +125,49 @@ class _CalendarPageState extends State<Calendar> {
     print(_exerciseContent);
   }
 
+  void removeExercise(DateTime date, int index){
+    print('delete exercise from file');
+    if(_fileExists){
+      print("file exists");
+      Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
+      jsonFileContent['data'][date.toString()].removeAt(index);
+      jsonFile.writeAsStringSync(json.encode(jsonFileContent));
+      this.setState((){
+        _exerciseContent = json.decode(jsonFile.readAsStringSync());
+      });
+    }
+  }
+
   createAddContent(BuildContext context) {
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter setState) {
-        return Container(
-          child: DropdownButton<String>(
-            value: _currentValue,
-            hint: new Text("Select Exercise"),
-            items: _exercises.map((String value) {
-              return new DropdownMenuItem<String>(
-                value: value,
-                child: SizedBox( 
-                  width: 200.0,
-                  child: Text(value)
-                ),
-              );
-            }
-          ).toList(),
-          onChanged: (String change) {
-            setState(() {
-              _currentValue = change;
-            });
-          },
-        ));
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              new DropdownButton<String>(
+                value: _currentValue,
+                hint: new Text("Select Exercise"),
+                items: _exercises.map((String value) {
+                  return new DropdownMenuItem<String>(
+                    value: value,
+                    child: SizedBox( 
+                      width: 259.0,
+                      child: Text(value)
+                    ),
+                  );
+                }).toList(),
+              onChanged: (String change) {
+                setState(() {
+                  _currentValue = change;
+                });
+              },),
+              new TextField(
+                decoration: new InputDecoration(labelText: "Exercise Time (seconds)"),
+                keyboardType: TextInputType.number,
+                controller: secondsController,
+              )
+            ],
+        );
       },
     );
   }
@@ -149,7 +190,13 @@ class _CalendarPageState extends State<Calendar> {
               elevation: 5.0,
               child: Text("Add"),
               onPressed: () {
-                writeExercise(_selectedDay, _currentValue, 60);
+                writeExercise(_selectedDay, _currentValue, int.parse(secondsController.text), 10, false);
+                if(_events[_selectedDay] == null){
+                  _events[_selectedDay] = [];
+                  _completed[_selectedDay] = [];
+                }
+                _events[_selectedDay].add(_currentValue + " (" + secondsController.text + "s)");
+                _completed[_selectedDay].add(false);
                 Navigator.pop(context);
               }
             )
@@ -171,25 +218,48 @@ class _CalendarPageState extends State<Calendar> {
       onDaySelected: (date, events) {
         setState(() {
           _selectedEvents = events;
-          _selectedDay = date;
+          _selectedDay = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
         });
       },
     );
   }
 
+  Color getColor(complete){
+    if(complete) return Colors.grey;
+    if(!complete) return Colors.black;
+  }
+
   Widget _buildExerciseList() {
+    
     return ListView.builder(
       itemCount: _selectedEvents.length+1,
       itemBuilder: (context, index) {
         if(index == 0){
-          print("built");
           return _buildCalendar();
         } else{
           return ListTile(
-            title: Text(_selectedEvents[index-1].toString()),
+            title: Text(
+              _selectedEvents[index-1].toString(), 
+              style: TextStyle(color: getColor(_selectedCompleted[index-1]))
+            ),
             onTap: () {
               print('Entry ${_selectedEvents[index-1]}');
-            }
+            },
+            trailing: RaisedButton(
+              child: Icon(Icons.cancel),
+              textColor: Colors.red[600],
+              color: Colors.white,
+              splashColor: Colors.white,
+              elevation: 0.0,
+              onPressed:(){
+                _events[_selectedDay].removeAt(index-1);
+                setState(() {
+                  _events = _events;
+                });
+                removeExercise(_selectedDay, index-1);
+              }
+            ),
+            contentPadding: EdgeInsets.only(left: 30),
           );
         }
         
@@ -199,20 +269,21 @@ class _CalendarPageState extends State<Calendar> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        mainAxisSize: MainAxisSize.max, 
-        children: <Widget>[
-          Expanded(child: _buildExerciseList())
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        onPressed: (){
-          createAddDialog(context);
-        }
-      )
-    );
+      return Scaffold(
+        body: Column(
+          mainAxisSize: MainAxisSize.max, 
+          children: <Widget>[
+            Expanded(child: _buildExerciseList())
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.add),
+          onPressed: (){
+            createAddDialog(context);
+          }
+        )
+      );
+    
   }
 }
 
