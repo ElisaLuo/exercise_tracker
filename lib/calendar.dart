@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:exercise_tracker/timer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -83,6 +85,7 @@ class _CalendarPageState extends State<Calendar> {
         _selectedEvents = _events[_selectedDay] ?? [];
         _selectedCompleted = _completed[_selectedDay] ?? [];
       });
+      print(_selectedCompleted);
     });
   }
 
@@ -219,6 +222,7 @@ class _CalendarPageState extends State<Calendar> {
         setState(() {
           _selectedEvents = events;
           _selectedDay = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
+          _selectedCompleted = _completed[_selectedDay];
         });
       },
     );
@@ -230,7 +234,6 @@ class _CalendarPageState extends State<Calendar> {
   }
 
   Widget _buildExerciseList() {
-    
     return ListView.builder(
       itemCount: _selectedEvents.length+1,
       itemBuilder: (context, index) {
@@ -245,25 +248,78 @@ class _CalendarPageState extends State<Calendar> {
             onTap: () {
               print('Entry ${_selectedEvents[index-1]}');
             },
-            trailing: RaisedButton(
-              child: Icon(Icons.cancel),
-              textColor: Colors.red[600],
-              color: Colors.white,
-              splashColor: Colors.white,
-              elevation: 0.0,
-              onPressed:(){
-                _events[_selectedDay].removeAt(index-1);
-                setState(() {
-                  _events = _events;
-                });
-                removeExercise(_selectedDay, index-1);
-              }
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                RaisedButton(
+                  child: Icon(Icons.play_arrow),
+                  textColor: getColor(_selectedCompleted[index-1]),
+                  color: Colors.white,
+                  splashColor: Colors.white,
+                  elevation: 0.0,
+                  onPressed:(){
+                    if(_selectedCompleted[index-1]){
+
+                    } else{
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (context) => TimerPage(),
+                          settings: RouteSettings(arguments: _selectedEvents[index-1])
+                        )
+                      );
+                    }
+                    
+                  }
+                ),
+                RaisedButton(
+                  child: Icon(Icons.cancel),
+                  textColor: Colors.red[600],
+                  color: Colors.white,
+                  splashColor: Colors.white,
+                  elevation: 0.0,
+                  onPressed:(){
+                    _events[_selectedDay].removeAt(index-1);
+                    setState(() {
+                      _events = _events;
+                    });
+                    removeExercise(_selectedDay, index-1);
+                  }
+                ),
+              ],
             ),
             contentPadding: EdgeInsets.only(left: 30),
           );
         }
         
       },
+    );
+  }
+
+  Widget _speedDial(){
+    return SpeedDial(
+      animatedIcon: AnimatedIcons.menu_close,
+      animatedIconTheme: IconThemeData(size: 22.0),
+      children: [
+        SpeedDialChild(
+          child: Icon(Icons.play_arrow),
+          label: 'Start Workout',
+          onTap: () {
+            Navigator.push(
+              context, 
+                MaterialPageRoute(
+                  builder: (context) => TimerPage(),
+                  settings: RouteSettings(arguments: _selectedEvents)
+                )
+              );
+          }
+        ),
+        SpeedDialChild(
+          child: Icon(Icons.add),
+          label: 'Add Exercise',
+          onTap: () => createAddDialog(context)
+        ),
+      ],
     );
   }
 
@@ -276,12 +332,7 @@ class _CalendarPageState extends State<Calendar> {
             Expanded(child: _buildExerciseList())
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
-          onPressed: (){
-            createAddDialog(context);
-          }
-        )
+        floatingActionButton: _speedDial()
       );
     
   }
