@@ -1,179 +1,152 @@
-/* https://medium.com/flutterdevs/creating-a-countdown-timer-using-animation-in-flutter-2d56d4f3f5f1 */
-
-import 'dart:math';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wave/config.dart';
+import 'package:wave/wave.dart';
 
 class TimerPage extends StatelessWidget {
+  final String dur;
+
+  TimerPage({
+    @required this.dur,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Timer();
+    return Timers(durp: dur);
   }
 }
 
-class Timer extends StatefulWidget {
-  // body
+class Timers extends StatefulWidget {
+  final String durp;
+
+  Timers({
+    @required this.durp,
+  });
+  
   @override
   _TimerState createState() => _TimerState();
 }
 
-class CustomTimerPainter extends CustomPainter{
-  CustomTimerPainter({
-    this.animation,
-    this.backgroundColor,
-    this.color,
-  }) : super(repaint: animation);
-
-  final Animation<double> animation;
-  final Color backgroundColor, color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = backgroundColor
-      ..strokeWidth = 10.0
-      ..strokeCap = StrokeCap.butt
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawCircle(size.center(Offset.zero), size.width / 2.0, paint);
-    paint.color = color;
-    double progress = (1.0 - animation.value) * 2 * pi;
-    canvas.drawArc(Offset.zero & size, pi * 1.5, -progress, false, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomTimerPainter old) {
-    return animation.value != old.animation.value ||
-        color != old.color ||
-        backgroundColor != old.backgroundColor;
-  }
-}
-
-class _TimerState extends State<Timer> with TickerProviderStateMixin{ // body
-  AnimationController controller;
+class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
   List seconds = [];
-  int durat = 0;
-
-  String get timerString {
-    Duration duration = controller.duration * controller.value;
-    return '${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
-  }
+  int dura;
+  int oriDura;
+  double finalDura;
+  String exer;
+  bool counting;
+  Timer timer;
 
   @override
   void initState() {
     super.initState();
-    
-    controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: durat)
+    oriDura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
+    dura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
+    finalDura = double.parse(widget.durp.split(" (")[1].split("s")[0]);
+    exer = widget.durp.split(" (")[0];
+    counting = false;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  startTimer() {
+    timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if(dura <= 0) {
+        setState(() {
+          counting = false;
+        });
+        timer.cancel();
+      } else{
+        setState(() {
+          finalDura = finalDura-0.05;
+          dura = finalDura.round();
+        });
+      }
+    });
+  }
+
+  cancelTimer() {
+    timer.cancel();
+  }
+
+  String get timerString {
+    return '${((dura / 60) % 60).floor().toString().padLeft(2, '0')}:${(dura % 60).floor().toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget background(BuildContext context) {
+    return WaveWidget(
+      config: CustomConfig(
+        gradients: [
+          [
+            Color.fromRGBO(72, 74, 126, 1),
+            Color.fromRGBO(125, 170, 206, 1),
+            Color.fromRGBO(184, 189, 245, 0.7)
+          ],
+          [
+            Color.fromRGBO(72, 74, 126, 1),
+            Color.fromRGBO(125, 170, 206, 1),
+            Color.fromRGBO(172, 182, 219, 0.7)
+          ],
+          [
+            Color.fromRGBO(72, 73, 126, 1),
+            Color.fromRGBO(125, 170, 206, 1),
+            Color.fromRGBO(190, 238, 246, 0.7)
+          ],
+        ],
+        durations: [19440, 10800, 6000],
+        heightPercentages: [(1-finalDura/oriDura)*0.9, (1-finalDura/oriDura)*0.95, (1-finalDura/oriDura)],
+      ),
+      size: Size(double.infinity, double.infinity),
+      waveAmplitude: 25,
     );
   }
   
   @override
   Widget build(BuildContext context) {
-    String temp = ModalRoute.of(context).settings.arguments.toString();
-    seconds.add([]);
-    seconds[0].add(temp.split(" (")[0]);
-    seconds[0].add(int.parse(temp.split(" (")[1].split("s")[0]));
-    setState(() {
-      durat = seconds[0][1];
-    });
-    controller = AnimationController(
-      vsync: this,
-      duration: Duration(seconds: durat)
-    );
     return Scaffold(
       appBar: AppBar(
-        title: Text("Exercise Timer"),
+        title: Text('Exercise Timer')
       ),
-      body: AnimatedBuilder( 
-        animation: controller,
-        builder: (context, child){
-          return Stack(
+      body: Stack(
+        children: <Widget>[
+          background(context),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Container( 
-                  color: Colors.blueAccent,
-                  height: controller.value * (MediaQuery.of(context).size.height - AppBar().preferredSize.height)
-                )
-              ),
-              Padding( 
-                padding: EdgeInsets.all(50.0),
-                child: Column( 
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Expanded(
-                      child: Align(
-                        alignment: FractionalOffset.center,
-                        child: AspectRatio( 
-                          aspectRatio: 1,
-                          child: Stack( 
-                            children: <Widget>[
-                              Positioned.fill(
-                                child: CustomPaint(
-                                  painter: CustomTimerPainter(
-                                    animation: controller,
-                                    backgroundColor: Colors.red,
-                                    color: Colors.black,
-                                  )
-                                )
-                              ),
-                              Align( 
-                                alignment: FractionalOffset.center,
-                                child: Column( 
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Text(
-                                      seconds[0][0],
-                                      style: TextStyle( 
-                                        fontSize: 30.0,
-                                        color: Colors.black
-                                      )
-                                    ),
-                                    AnimatedBuilder( 
-                                      animation: controller,
-                                      builder: (context, child){
-                                        return Text( 
-                                          timerString,
-                                          style: TextStyle( 
-                                            fontSize: 92.0,
-                                            color: Colors.black
-                                          )
-                                        );
-                                      },
-                                    )
-                                  ],
-                                )
-                              ),
-                            ],
-                          ),
-                        )
-                      )
-                    ),
-                    AnimatedBuilder(
-                      animation: controller,
-                      builder: (context, child){
-                        return FloatingActionButton.extended(
-                          onPressed: (){
-                            if(controller.isAnimating){
-                              controller.stop();
-                            } else {
-                              controller.reverse(from: controller.value == 0.0 ? 1.0 : controller.value);
-                            }
-                          },
-                          icon: Icon(controller.isAnimating ? Icons.pause : Icons.play_arrow),
-                          label: Text(controller.isAnimating ? "Pause" : "Play")
-                        );
-                      },
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 100.0),
+                child: Center(
+                  child: Text( 
+                    timerString,
+                    style: TextStyle( 
+                      fontSize: 92.0,
+                      color: Colors.black
                     )
-                  ],
-                )
+                  )
+                ),
+              ),
+              FloatingActionButton.extended(
+                onPressed: (){
+                  if(counting){
+                    cancelTimer();
+                  } else{
+                    startTimer();
+                  }
+                  setState(() {
+                    counting = !counting;
+                  });
+                },
+                icon: Icon(counting ? Icons.pause : Icons.play_arrow),
+                label: Text(counting ? "Pause" : "Play")
               )
-            ]
-          );
-        }
+            ],
+          ),
+        ],
       )
     );
   }

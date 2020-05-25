@@ -264,8 +264,7 @@ class _CalendarPageState extends State<Calendar> {
                       Navigator.push(
                         context, 
                         MaterialPageRoute(
-                          builder: (context) => TimerPage(),
-                          settings: RouteSettings(arguments: _selectedEvents[index-1])
+                          builder: (context) => TimerPage(dur: _selectedEvents[index-1]),
                         )
                       );
                     }
@@ -308,8 +307,7 @@ class _CalendarPageState extends State<Calendar> {
             Navigator.push(
               context, 
                 MaterialPageRoute(
-                  builder: (context) => TimerPage(),
-                  settings: RouteSettings(arguments: _selectedEvents)
+                  builder: (context) => TimerPage(dur: "1"),
                 )
               );
           }
