@@ -29,7 +29,7 @@ class _CalendarPageState extends State<Calendar> {
   Map<DateTime, List> _completed;
   List _selectedCompleted;
   String _currentValue;
-  List<String> _exercises;
+  List<String> _exercises = [];
   DateTime _selectedDay = DateFormat("yyyy-MM-dd").parse(DateTime.now().toString());
   Map<String, dynamic> _exerciseContent;
   bool _fileExists = false;
@@ -64,6 +64,7 @@ class _CalendarPageState extends State<Calendar> {
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync());
         });
+        print(_exerciseContent['data'].toString());
         var _keyslist = _exerciseContent['data'].keys.toList();
         for(var i = 0; i < _keyslist.length; i++){
           var _currentDate = _keyslist[i];
@@ -85,6 +86,40 @@ class _CalendarPageState extends State<Calendar> {
         _selectedEvents = _events[_selectedDay] ?? [];
         _selectedCompleted = _completed[_selectedDay] ?? [];
       });
+      print(_completed);
+      print(_selectedCompleted);
+    });
+  }
+
+  Future _updateExercise() async{
+    getApplicationDocumentsDirectory().then((Directory directory){
+      dir = directory;
+      jsonFile = File('${directory.path}/exerciseTrack.json');
+      _fileExists = jsonFile.existsSync();
+      if(_fileExists){
+        this.setState((){
+          _exerciseContent = json.decode(jsonFile.readAsStringSync());
+        });
+        print(_exerciseContent['data'].toString());
+        var _keyslist = _exerciseContent['data'].keys.toList();
+        for(var i = 0; i < _keyslist.length; i++){
+          var _currentDate = _keyslist[i];
+          var _dateTime = DateFormat("yyyy-MM-dd").parse(_currentDate);
+          if(_events[_dateTime] == null){
+            _events[_dateTime] = [];
+            _completed[_dateTime] = [];
+          }
+          for(var j = 0; j < _exerciseContent['data'][_currentDate].length; j++){
+            _completed[_dateTime][j] = (_exerciseContent['data'][_keyslist[i]][j]['Completed']);
+          }
+          
+        }
+      }
+      setState(() {
+        _completed = _completed;
+        _selectedCompleted = _completed[_selectedDay] ?? [];
+      });
+      print(_completed);
       print(_selectedCompleted);
     });
   }
@@ -106,10 +141,10 @@ class _CalendarPageState extends State<Calendar> {
     super.dispose();
   }
 
-  void writeExercise(DateTime date, String exercise, int seconds, int amount, bool completed){
+  void writeExercise(DateTime date, String exercise, int seconds, bool completed){
     date = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
     print("write to file");
-    Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Amount": amount, "Completed": completed};
+    Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Completed": completed};
     if(_fileExists){
       print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
@@ -134,9 +169,11 @@ class _CalendarPageState extends State<Calendar> {
       print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
       jsonFileContent['data'][date.toString()].removeAt(index);
+      _completed[date].removeAt(index);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
       this.setState((){
         _exerciseContent = json.decode(jsonFile.readAsStringSync());
+        _completed = _completed;
       });
     }
   }
@@ -193,7 +230,7 @@ class _CalendarPageState extends State<Calendar> {
               elevation: 5.0,
               child: Text("Add"),
               onPressed: () {
-                writeExercise(_selectedDay, _currentValue, int.parse(secondsController.text), 10, false);
+                writeExercise(_selectedDay, _currentValue, int.parse(secondsController.text), false);
                 if(_events[_selectedDay] == null){
                   _events[_selectedDay] = [];
                   _completed[_selectedDay] = [];
@@ -264,9 +301,13 @@ class _CalendarPageState extends State<Calendar> {
                       Navigator.push(
                         context, 
                         MaterialPageRoute(
-                          builder: (context) => TimerPage(dur: _selectedEvents[index-1]),
+                          builder: (context) => TimerPage(dur: _selectedEvents[index-1] + " " + _selectedDay.toString()),
                         )
-                      );
+                      ).then((_){
+                        setState(() {
+                          _updateExercise();
+                        });
+                      });
                     }
                     
                   }
@@ -307,7 +348,7 @@ class _CalendarPageState extends State<Calendar> {
             Navigator.push(
               context, 
                 MaterialPageRoute(
-                  builder: (context) => TimerPage(dur: "1"),
+                  builder: (context) => TimerPage(dur: "1, 2"),
                 )
               );
           }

@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:wave/config.dart';
 import 'package:wave/wave.dart';
 
@@ -36,14 +39,29 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
   String exer;
   bool counting;
   Timer timer;
+  bool _fileExists = false;
+  File jsonFile;
+  bool _exerfileExists = false;
+  File exerjsonFile;
+  Directory dir;
+  String date;
+  var formatDate;
 
   @override
   void initState() {
     super.initState();
+
+    _fetchExerciseByItem();
+    
+
+    print("here");
+    print(widget.durp);
     oriDura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
     dura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
     finalDura = double.parse(widget.durp.split(" (")[1].split("s")[0]);
     exer = widget.durp.split(" (")[0];
+    date = widget.durp.split(") ")[1].split(" ")[0];
+    formatDate = DateTime.parse(widget.durp.split(") ")[1]).toString();
     counting = false;
   }
 
@@ -52,6 +70,65 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
     super.dispose();
   }
 
+  Future _fetchExerciseByItem() async{
+    getApplicationDocumentsDirectory().then((Directory directory){
+      dir = directory;
+      jsonFile = File('${directory.path}/exerciseByItem.json');
+      _fileExists = jsonFile.existsSync();
+      if(_fileExists){
+        print("exercise by item file exists");
+        print("file" + json.decode(jsonFile.readAsStringSync())['data'].toString());
+      } else{
+        createFile();
+      }
+      setState(() {
+      });
+    });
+  }
+
+  void createFile(){
+    var temp = {"data": {exer: []}};
+    print("create file");
+    File file = new File('${dir.path}/exerciseByItem.json');
+    file.createSync();
+    print(json.encode(temp).toString());
+    file.writeAsStringSync(json.encode(temp));
+    _fileExists = true;
+  }
+
+  void setAsComplete(date, exercise, duration){
+    getApplicationDocumentsDirectory().then((Directory directory){
+      dir = directory;
+      exerjsonFile = File('${directory.path}/exerciseTrack.json');
+      _exerfileExists = exerjsonFile.existsSync();
+      if(_exerfileExists){
+        Map<String, dynamic> jsonFileContent = json.decode(exerjsonFile.readAsStringSync());
+        for(Map<String, dynamic> item in jsonFileContent['data'][formatDate]){
+          if(item["Exercise"] == exercise && item["Seconds"] == duration && item["Completed"] == false){
+            item["Completed"] = true;
+            print(item.toString());
+            break;
+          }
+        }
+        exerjsonFile.writeAsStringSync(json.encode(jsonFileContent));
+      }
+      setState(() {
+      });
+    });
+  }
+  /* void writeExercise(DateTime date, String exercise, int seconds, int amount, bool completed){
+    date = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
+    print("write to file");
+    Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Amount": amount, "Completed": completed};
+    if(_fileExists){
+      print("file exists");
+      
+    } else{
+      print("file no exist");
+      createFile(content, date);
+    }
+  } */
+
   startTimer() {
     timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
       if(dura <= 0) {
@@ -59,6 +136,7 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
           counting = false;
         });
         timer.cancel();
+        setAsComplete(formatDate, exer, oriDura);
       } else{
         setState(() {
           finalDura = finalDura-0.05;
@@ -82,19 +160,16 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
       config: CustomConfig(
         gradients: [
           [
-            Color.fromRGBO(72, 74, 126, 1),
-            Color.fromRGBO(125, 170, 206, 1),
-            Color.fromRGBO(184, 189, 245, 0.7)
+            Color.fromRGBO(72, 74, 126, 0.6),
+            Color.fromRGBO(125, 170, 206, 0.6),
           ],
           [
-            Color.fromRGBO(72, 74, 126, 1),
-            Color.fromRGBO(125, 170, 206, 1),
-            Color.fromRGBO(172, 182, 219, 0.7)
-          ],
-          [
-            Color.fromRGBO(72, 73, 126, 1),
-            Color.fromRGBO(125, 170, 206, 1),
+            Color.fromRGBO(125, 170, 206, 0.7),
             Color.fromRGBO(190, 238, 246, 0.7)
+          ],
+          [
+            Color.fromRGBO(72, 74, 126, 0.5),
+            Color.fromRGBO(172, 182, 219, 0.5)
           ],
         ],
         durations: [19440, 10800, 6000],

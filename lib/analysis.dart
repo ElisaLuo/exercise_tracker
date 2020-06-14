@@ -1,93 +1,115 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:charts_flutter/flutter.dart' as charts;
 
-class AnalysisPage extends StatelessWidget { // body
-  var temp = "";
+class AnalysisPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return Analysis();
+  }
+}
+
+class Analysis extends StatefulWidget {
+  // body
+  @override
+  _AnalysisPageState createState() => _AnalysisPageState();
+}
+
+class LinearSales {
+  final int year;
+  final int sales;
+
+  LinearSales(this.year, this.sales);
+}
+
+class _AnalysisPageState extends State<Analysis> {
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future _fetchData() async {
+    /* getApplicationDocumentsDirectory().then((Directory directory){
+      dir = directory;
+      jsonFile = File('${directory.path}/exerciseTrack.json');
+      _fileExists = jsonFile.existsSync();
+      if(_fileExists){
+        this.setState((){
+          _exerciseContent = json.decode(jsonFile.readAsStringSync());
+        });
+        var _keyslist = _exerciseContent['data'].keys.toList();
+        for(var i = 0; i < _keyslist.length; i++){
+          var _currentDate = _keyslist[i];
+          var _dateTime = DateFormat("yyyy-MM-dd").parse(_currentDate);
+          if(_events[_dateTime] == null){
+            _events[_dateTime] = [];
+            _completed[_dateTime] = [];
+          }
+          for(var j = 0; j < _exerciseContent['data'][_currentDate].length; j++){
+            _completed[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Completed']);
+            _events[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Exercise'] + " (" + _exerciseContent['data'][_keyslist[i]][j]['Seconds'].toString() + "s)");
+          }
+          
+        }
+      }
+      setState(() {
+        _events = _events;
+        _completed = _completed;
+        _selectedEvents = _events[_selectedDay] ?? [];
+        _selectedCompleted = _completed[_selectedDay] ?? [];
+      });
+      print(_selectedCompleted);
+    }); */
+  }
+
+  void createFile(Map<String, dynamic> content, DateTime date) {
+    /* String datestring = date.toString();
+    var temp = {"data": {datestring: [content]}};
+    print("create file");
+    File file = new File('${dir.path}/exerciseTrack.json');
+    file.createSync();
+    file.writeAsStringSync(json.encode(temp));
+    _fileExists = true; */
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var data = [
+      new LinearSales(0, 5),
+      new LinearSales(1, 25),
+      new LinearSales(2, 100),
+      new LinearSales(3, 75),
+    ];
+
+    var series = [
+      charts.Series(
+        domainFn: (LinearSales clickData, _) => clickData.year,
+        measureFn: (LinearSales clickData, _) => clickData.sales,
+        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        id: 'Clicks',
+        data: data,
+      ),
+    ];
+
+    var chart = charts.LineChart(
+      series,
+      animate: true,
+    );
+
+    var chartWidget = Padding(
+      padding: EdgeInsets.all(32.0),
+      child: SizedBox(
+        height: 200.0,
+        child: chart,
+      ),
+    );
     return Scaffold(
       body: Column(
+        mainAxisSize: MainAxisSize.max,
         children: <Widget>[
-          TextField(
-            onChanged: (text) {
-              temp = text;
-            },
-          ),
-          Row(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RaisedButton(
-                  child: Text('Read'),
-                  onPressed: () {
-                    _read();
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: RaisedButton(
-                  child: Text('Save'),
-                  onPressed: () {
-                    _save(temp);
-                  },
-                ),
-              ),
-            ],
-          )
+          chartWidget
         ],
       ),
     );
   }
 }
-
-Future<String> get _localPath async { // get file location
-  final directory = await getApplicationDocumentsDirectory();
-  print(directory.path);
-  return directory.path;
-}
-
-Future<File> get _localFile async { // get file
-  final path = await _localPath;
-  return File('$path/allExercises.txt');
-}
-
-/* _read() async { // read function
-  try {
-    final file = await _localFile;
-    String text = await file.readAsString();
-    print(text); // don't need
-  } catch (e) {
-    print("Couldn't read file");
-  }
-}
-
-_save(String something) async { // write function
-  final file = await _localFile;
-  String text1 = await file.readAsString();
-  final text = text1 + something + ",";
-  await file.writeAsString(text);
-  print('saved'); // don't need
-} */
-
-_read() async {
-        try {
-          final directory = await getApplicationDocumentsDirectory();
-          final file = File('${directory.path}/allEx.txt');
-          String text = await file.readAsString();
-          print(text);
-        } catch (e) {
-          print("Couldn't read file");
-        }
-      }
-
-      _save(String info) async {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/allEx.txt');
-        final text = info;
-        await file.writeAsString(text);
-        print('saved');
-      }
