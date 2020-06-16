@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:path_provider/path_provider.dart';
 
 class AnalysisPage extends StatelessWidget {
   @override
@@ -14,86 +18,77 @@ class Analysis extends StatefulWidget {
   _AnalysisPageState createState() => _AnalysisPageState();
 }
 
-class LinearSales {
-  final int year;
-  final int sales;
-
-  LinearSales(this.year, this.sales);
+class TimeSeriesSales {
+  final DateTime date;
+  final int time;
+  TimeSeriesSales(this.date, this.time);
 }
 
 class _AnalysisPageState extends State<Analysis> {
+  bool _fileExists = false;
+  Directory dir;
+  File jsonFile;
+  List<TimeSeriesSales> data = [];
+  Map<String, dynamic> _exerciseContent;
+
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _fetchExercise();
   }
 
-  Future _fetchData() async {
-    /* getApplicationDocumentsDirectory().then((Directory directory){
+  Future _fetchExercise() async{
+    getApplicationDocumentsDirectory().then((Directory directory){
       dir = directory;
-      jsonFile = File('${directory.path}/exerciseTrack.json');
+      jsonFile = File('${directory.path}/exerciseByItem.json');
       _fileExists = jsonFile.existsSync();
       if(_fileExists){
         this.setState((){
-          _exerciseContent = json.decode(jsonFile.readAsStringSync());
+          _exerciseContent = json.decode(jsonFile.readAsStringSync())['data'];
         });
-        var _keyslist = _exerciseContent['data'].keys.toList();
-        for(var i = 0; i < _keyslist.length; i++){
-          var _currentDate = _keyslist[i];
-          var _dateTime = DateFormat("yyyy-MM-dd").parse(_currentDate);
-          if(_events[_dateTime] == null){
-            _events[_dateTime] = [];
-            _completed[_dateTime] = [];
-          }
-          for(var j = 0; j < _exerciseContent['data'][_currentDate].length; j++){
-            _completed[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Completed']);
-            _events[_dateTime].add(_exerciseContent['data'][_keyslist[i]][j]['Exercise'] + " (" + _exerciseContent['data'][_keyslist[i]][j]['Seconds'].toString() + "s)");
-          }
-          
+        print(_exerciseContent.toString());
+        for(int i = 0; i < _exerciseContent['run'].length; i++){
+          var time = DateTime.parse(_exerciseContent['run'][i][0]);
+          data.add(new TimeSeriesSales(time, _exerciseContent['run'][i][1]));
         }
+        /* for(int i = 0; i < _exerciseContent['xcfa'].length; i++){
+          data.add(new TimeSeriesSales(_exerciseContent['xcfa']))
+        } */
+      } else{
+        createFile();
       }
       setState(() {
-        _events = _events;
-        _completed = _completed;
-        _selectedEvents = _events[_selectedDay] ?? [];
-        _selectedCompleted = _completed[_selectedDay] ?? [];
       });
-      print(_selectedCompleted);
-    }); */
+    });
   }
 
-  void createFile(Map<String, dynamic> content, DateTime date) {
-    /* String datestring = date.toString();
-    var temp = {"data": {datestring: [content]}};
+  void createFile(){
+    var temp = {"data": {}};
     print("create file");
-    File file = new File('${dir.path}/exerciseTrack.json');
+    File file = new File('${dir.path}/exerciseByItem.json');
     file.createSync();
+    print(json.encode(temp).toString());
     file.writeAsStringSync(json.encode(temp));
-    _fileExists = true; */
+    _fileExists = true;
   }
 
   @override
   Widget build(BuildContext context) {
-    var data = [
-      new LinearSales(0, 5),
-      new LinearSales(1, 25),
-      new LinearSales(2, 100),
-      new LinearSales(3, 75),
-    ];
+    
 
     var series = [
       charts.Series(
-        domainFn: (LinearSales clickData, _) => clickData.year,
-        measureFn: (LinearSales clickData, _) => clickData.sales,
-        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
-        id: 'Clicks',
+        id: 'Sales',
         data: data,
-      ),
+        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
+        domainFn: (TimeSeriesSales sales, _) => sales.date,
+        measureFn: (TimeSeriesSales sales, _) => sales.time,
+      )
     ];
 
-    var chart = charts.LineChart(
+    var chart = charts.TimeSeriesChart(
       series,
-      animate: true,
+      animate: false
     );
 
     var chartWidget = Padding(
@@ -103,6 +98,7 @@ class _AnalysisPageState extends State<Analysis> {
         child: chart,
       ),
     );
+
     return Scaffold(
       body: Column(
         mainAxisSize: MainAxisSize.max,
@@ -113,3 +109,5 @@ class _AnalysisPageState extends State<Analysis> {
     );
   }
 }
+
+/// Sample time series data type.

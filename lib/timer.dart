@@ -81,8 +81,6 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
       } else{
         createFile();
       }
-      setState(() {
-      });
     });
   }
 
@@ -100,9 +98,11 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
     getApplicationDocumentsDirectory().then((Directory directory){
       dir = directory;
       exerjsonFile = File('${directory.path}/exerciseTrack.json');
+      jsonFile = File('${directory.path}/exerciseByItem.json');
       _exerfileExists = exerjsonFile.existsSync();
-      if(_exerfileExists){
+      if(_exerfileExists && _fileExists){
         Map<String, dynamic> jsonFileContent = json.decode(exerjsonFile.readAsStringSync());
+        Map<String, dynamic> jsonFileCont = json.decode(jsonFile.readAsStringSync());
         for(Map<String, dynamic> item in jsonFileContent['data'][formatDate]){
           if(item["Exercise"] == exercise && item["Seconds"] == duration && item["Completed"] == false){
             item["Completed"] = true;
@@ -110,7 +110,14 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
             break;
           }
         }
+        if(jsonFileCont['data'][exercise] == null){
+          jsonFileCont['data'][exercise] = [];
+          jsonFileCont['data'][exercise].add([date, duration]);
+        } else{
+          jsonFileCont['data'][exercise].add([date, duration]);
+        }
         exerjsonFile.writeAsStringSync(json.encode(jsonFileContent));
+        jsonFile.writeAsStringSync(json.encode(jsonFileCont));
       }
       setState(() {
       });
