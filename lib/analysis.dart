@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:path_provider/path_provider.dart';
+
+import 'detail.dart';
 
 class AnalysisPage extends StatelessWidget {
   @override
@@ -15,21 +16,16 @@ class AnalysisPage extends StatelessWidget {
 class Analysis extends StatefulWidget {
   // body
   @override
-  _AnalysisPageState createState() => _AnalysisPageState();
+  _AnalysisState createState() => _AnalysisState();
 }
 
-class TimeSeriesSales {
-  final DateTime date;
-  final int time;
-  TimeSeriesSales(this.date, this.time);
-}
-
-class _AnalysisPageState extends State<Analysis> {
+class _AnalysisState extends State<Analysis> { // body
   bool _fileExists = false;
   Directory dir;
   File jsonFile;
-  List<TimeSeriesSales> data = [];
   Map<String, dynamic> _exerciseContent;
+  var allExercise = [];
+  var allInfo = [];
 
   @override
   void initState() {
@@ -46,14 +42,18 @@ class _AnalysisPageState extends State<Analysis> {
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync())['data'];
         });
-        print(_exerciseContent.toString());
-        for(int i = 0; i < _exerciseContent['run'].length; i++){
-          var time = DateTime.parse(_exerciseContent['run'][i][0]);
-          data.add(new TimeSeriesSales(time, _exerciseContent['run'][i][1]));
+        allExercise = _exerciseContent.keys.toList();
+        print(_exerciseContent.keys.toList().toString());
+        for(int i = 0; i < allExercise.length; i++){
+          allInfo.add([]);
+          allInfo[i].add(allExercise[i]);
+          allInfo[i].add(0);
+          for(int j = 0; j < _exerciseContent[allExercise[i]].length; j++){
+            allInfo[i][1] += _exerciseContent[allExercise[i]][j][1];
+          }
+          
         }
-        /* for(int i = 0; i < _exerciseContent['xcfa'].length; i++){
-          data.add(new TimeSeriesSales(_exerciseContent['xcfa']))
-        } */
+        print(allInfo.toString());
       } else{
         createFile();
       }
@@ -72,42 +72,40 @@ class _AnalysisPageState extends State<Analysis> {
     _fileExists = true;
   }
 
+  _buildList(BuildContext context){
+    return ListView.builder(
+      itemCount: allInfo.length,
+      itemBuilder: (context, index){
+        return ListTile(
+          title: Text('${allInfo[index][0]}'),
+          subtitle: Text('Total ${allInfo[index][1]} seconds'),
+          trailing: RaisedButton(
+            child: Icon(Icons.arrow_forward_ios),
+            color: Colors.white,
+            splashColor: Colors.white,
+            elevation: 0.0,
+            onPressed:(){
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailPage(exer: allInfo[index][0])
+                )
+              );
+            }
+          ),
+          contentPadding: EdgeInsets.only(left: 30),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    
-
-    var series = [
-      charts.Series(
-        id: 'Sales',
-        data: data,
-        colorFn: (_, __) => charts.MaterialPalette.blue.shadeDefault,
-        domainFn: (TimeSeriesSales sales, _) => sales.date,
-        measureFn: (TimeSeriesSales sales, _) => sales.time,
-      )
-    ];
-
-    var chart = charts.TimeSeriesChart(
-      series,
-      animate: false
-    );
-
-    var chartWidget = Padding(
-      padding: EdgeInsets.all(32.0),
-      child: SizedBox(
-        height: 200.0,
-        child: chart,
-      ),
-    );
-
     return Scaffold(
-      body: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: <Widget>[
-          chartWidget
-        ],
+      appBar: AppBar(
+        title: Text("Manage Exercises"),
       ),
+      body: _buildList(context),
     );
   }
 }
-
-/// Sample time series data type.
