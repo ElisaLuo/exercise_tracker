@@ -18,7 +18,6 @@ class MyAppState extends State<MyApp> {
   final _pageOptions = [
     CalendarPage(),
     AnalysisPage(),
-    ManageExercisesPage()
   ];
 
   int _currentIndex = 0;
@@ -45,10 +44,10 @@ class MyAppState extends State<MyApp> {
             icon: Icon(Icons.graphic_eq),
             title: Text('Track'),
           ),
-          BottomNavigationBarItem(
+          /* BottomNavigationBarItem(
             icon: Icon(Icons.fitness_center),
             title: Text('Edit Exercises'),
-          ),
+          ), */
         ],
       )
     );

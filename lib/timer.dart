@@ -85,7 +85,7 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
   }
 
   void createFile(){
-    var temp = {"data": {exer: []}};
+    var temp = {"data": {exer: {}}};
     print("create file");
     File file = new File('${dir.path}/exerciseByItem.json');
     file.createSync();
@@ -110,11 +110,12 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
             break;
           }
         }
-        if(jsonFileCont['data'][exercise] == null){
-          jsonFileCont['data'][exercise] = [];
-          jsonFileCont['data'][exercise].add([date, duration]);
+        if(jsonFileCont['data'][exercise] == null || jsonFileCont['data'][exercise].isEmpty){
+          jsonFileCont['data'][exercise] = {date: duration};
+          //print("not this thing " + jsonFileCont['data'][exercise].toString());
         } else{
-          jsonFileCont['data'][exercise].add([date, duration]);
+          jsonFileCont['data'][exercise][date] += duration;
+          print("this thing " + jsonFileCont['data'][exercise].toString());
         }
         exerjsonFile.writeAsStringSync(json.encode(jsonFileContent));
         jsonFile.writeAsStringSync(json.encode(jsonFileCont));
@@ -180,7 +181,7 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
           ],
         ],
         durations: [19440, 10800, 6000],
-        heightPercentages: [(1-finalDura/oriDura)*0.9, (1-finalDura/oriDura)*0.95, (1-finalDura/oriDura)],
+        heightPercentages: [(finalDura/oriDura)*0.9, (finalDura/oriDura)*1.1, (finalDura/oriDura)],
       ),
       size: Size(double.infinity, double.infinity),
       waveAmplitude: 25,
@@ -190,6 +191,7 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Exercise Timer')
       ),
@@ -207,7 +209,7 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
                     timerString,
                     style: TextStyle( 
                       fontSize: 92.0,
-                      color: Colors.black
+                      color: Colors.white
                     )
                   )
                 ),

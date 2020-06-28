@@ -31,6 +31,7 @@ class _CalendarPageState extends State<Calendar> {
   String _currentValue;
   List<String> _exercises = [];
   DateTime _selectedDay = DateFormat("yyyy-MM-dd").parse(DateTime.now().toString());
+  DateTime _today = DateFormat("yyyy-MM-dd").parse(DateTime.now().toString());
   Map<String, dynamic> _exerciseContent;
   bool _fileExists = false;
   File jsonFile;
@@ -265,9 +266,28 @@ class _CalendarPageState extends State<Calendar> {
     );
   }
 
-  Color getColor(complete){
-    if(complete) return Colors.grey;
-    if(!complete) return Colors.black;
+  Color getColor(complete, date){
+    if(!complete && date == _today) {
+      return Colors.black;
+    } else{
+      return Colors.grey;
+    }
+  }
+
+  Color getColors(complete){
+    if(!complete) {
+      return Colors.black;
+    } else{
+      return Colors.grey;
+    }
+  }
+
+  Color getCancel(complete){
+    if(!complete) {
+      return Colors.red;
+    } else{
+      return Colors.grey;
+    }
   }
 
   Widget _buildExerciseList() {
@@ -280,7 +300,7 @@ class _CalendarPageState extends State<Calendar> {
           return ListTile(
             title: Text(
               _selectedEvents[index-1].toString(), 
-              style: TextStyle(color: getColor(_selectedCompleted[index-1]))
+              style: TextStyle(color: getColors(_selectedCompleted[index-1]))
             ),
             onTap: () {
               print('Entry ${_selectedEvents[index-1]}');
@@ -290,12 +310,12 @@ class _CalendarPageState extends State<Calendar> {
               children: <Widget>[
                 RaisedButton(
                   child: Icon(Icons.play_arrow),
-                  textColor: getColor(_selectedCompleted[index-1]),
+                  textColor: getColor(_selectedCompleted[index-1], _selectedDay),
                   color: Colors.white,
                   splashColor: Colors.white,
                   elevation: 0.0,
                   onPressed:(){
-                    if(_selectedCompleted[index-1]){
+                    if(_selectedCompleted[index-1] || _selectedDay != _today){
 
                     } else{
                       Navigator.push(
@@ -314,16 +334,21 @@ class _CalendarPageState extends State<Calendar> {
                 ),
                 RaisedButton(
                   child: Icon(Icons.cancel),
-                  textColor: Colors.red[600],
+                  textColor: getCancel(_selectedCompleted[index-1]),
                   color: Colors.white,
                   splashColor: Colors.white,
                   elevation: 0.0,
                   onPressed:(){
-                    _events[_selectedDay].removeAt(index-1);
-                    setState(() {
-                      _events = _events;
-                    });
-                    removeExercise(_selectedDay, index-1);
+                    if(_selectedCompleted[index-1]){
+
+                    } else{
+                      _events[_selectedDay].removeAt(index-1);
+                      setState(() {
+                        _events = _events;
+                      });
+                      removeExercise(_selectedDay, index-1);
+                    }
+                    
                   }
                 ),
               ],
@@ -371,7 +396,10 @@ class _CalendarPageState extends State<Calendar> {
             Expanded(child: _buildExerciseList())
           ],
         ),
-        floatingActionButton: _speedDial()
+        floatingActionButton: FloatingActionButton(
+          child: Icon(Icons.add),
+          onPressed: () => createAddDialog(context)
+        )
       );
     
   }

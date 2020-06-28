@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:charts_flutter/flutter.dart' as charts;
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 class DetailPage extends StatelessWidget {
@@ -59,9 +60,10 @@ class _DetailPageState extends State<Detail> {
           _exerciseContent = json.decode(jsonFile.readAsStringSync())['data'];
         });
         print(_exerciseContent.toString());
-        for(int i = 0; i < _exerciseContent[widget.exers].length; i++){
-          var time = DateTime.parse(_exerciseContent[widget.exers][i][0]);
-          data.add(new TimeSeriesSales(time, _exerciseContent[widget.exers][i][1]));
+        List<dynamic> times = _exerciseContent[widget.exers].keys.toList();
+        for(int i = 0; i < times.length; i++){
+          var time = DateTime.parse(times[i]);
+          data.add(new TimeSeriesSales(time, _exerciseContent[widget.exers][times[i]]));
         }
       } else{
         createFile();
@@ -97,9 +99,6 @@ class _DetailPageState extends State<Detail> {
     var chart = charts.TimeSeriesChart(
       series,
       animate: false,
-      behaviors:[
-        new charts.ChartTitle("Exercise")
-      ]
     );
 
     var chartWidget = Padding(
@@ -110,11 +109,29 @@ class _DetailPageState extends State<Detail> {
       ),
     );
 
+    _buildList(BuildContext context){
+      return ListView.builder(
+        itemCount: data.length,
+        itemBuilder: (context, index){
+          return ListTile(
+            title: Text(new DateFormat('yyyy-MM-dd').format(data[index].date)),
+            subtitle: Text('Total ${data[index].time} seconds'),
+            contentPadding: EdgeInsets.only(left: 30),
+          );
+        },
+      );
+    }
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.exers)
+      ),
       body: Column(
         mainAxisSize: MainAxisSize.max,
         children: <Widget>[
-          chartWidget
+          chartWidget,
+          Expanded(child: _buildList(context))
+          
         ],
       ),
     );
