@@ -35,6 +35,8 @@ class _CalendarPageState extends State<Calendar> {
   Map<String, dynamic> _exerciseContent;
   bool _fileExists = false;
   File jsonFile;
+  bool _jsfileExists = false;
+  File jsFile;
   Directory dir;
 
   @override
@@ -43,12 +45,6 @@ class _CalendarPageState extends State<Calendar> {
     _controller = CalendarController(); // calendar controller
     _events = {};
     _completed = {};
-    _readAllExercise().then((s){
-      setState(() {
-        _exercises = s.toString().split(",");
-        _exercises.removeLast();
-      });
-    });
     
     _fetchExercise();
 
@@ -61,9 +57,12 @@ class _CalendarPageState extends State<Calendar> {
       dir = directory;
       jsonFile = File('${directory.path}/exerciseTrack.json');
       _fileExists = jsonFile.existsSync();
-      if(_fileExists){
+      jsFile = File('${directory.path}/exercises.json');
+      _jsfileExists = jsFile.existsSync();
+      if(_fileExists && _jsfileExists){
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync());
+          _exercises = json.decode(jsFile.readAsStringSync())['data'].cast<String>();
         });
         print(_exerciseContent['data'].toString());
         var _keyslist = _exerciseContent['data'].keys.toList();
@@ -214,12 +213,8 @@ class _CalendarPageState extends State<Calendar> {
   }
 
   createAddDialog(BuildContext context) {
-    _readAllExercise().then((s){
-      setState(() {
-        _exercises = s.toString().split(",");
-        _exercises.removeLast();
-      });
-    });
+    print(_exercises.toString());
+    _exercises = json.decode(jsFile.readAsStringSync())['data'].cast<String>();
     return showDialog(
       context: context,
       builder: (context) {
@@ -292,6 +287,7 @@ class _CalendarPageState extends State<Calendar> {
 
   Widget _buildExerciseList() {
     return ListView.builder(
+      physics: BouncingScrollPhysics(),
       itemCount: _selectedEvents.length+1,
       itemBuilder: (context, index) {
         if(index == 0){
@@ -405,9 +401,3 @@ class _CalendarPageState extends State<Calendar> {
   }
 }
 
-Future<String> _readAllExercise() async {
-  final directory = await getApplicationDocumentsDirectory();
-  final file = File('${directory.path}/exercises.txt');
-  String text = await file.readAsString();
-  return text;
-}

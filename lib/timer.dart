@@ -110,12 +110,15 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
             break;
           }
         }
-        if(jsonFileCont['data'][exercise] == null || jsonFileCont['data'][exercise].isEmpty){
+        if(jsonFileCont['data'][exercise] == null){
           jsonFileCont['data'][exercise] = {date: duration};
-          //print("not this thing " + jsonFileCont['data'][exercise].toString());
+        } else if(jsonFileCont['data'][exercise][date] == null){
+          jsonFileCont['data'][exercise][date] = duration;
+          print("not this thing " + jsonFileCont['data'][exercise].toString());
         } else{
-          jsonFileCont['data'][exercise][date] += duration;
           print("this thing " + jsonFileCont['data'][exercise].toString());
+          jsonFileCont['data'][exercise][date] += duration;
+          
         }
         exerjsonFile.writeAsStringSync(json.encode(jsonFileContent));
         jsonFile.writeAsStringSync(json.encode(jsonFileCont));
