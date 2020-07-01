@@ -53,9 +53,6 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
 
     _fetchExerciseByItem();
     
-
-    print("here");
-    print(widget.durp);
     oriDura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
     dura = int.parse(widget.durp.split(" (")[1].split("s")[0]);
     finalDura = double.parse(widget.durp.split(" (")[1].split("s")[0]);
@@ -76,8 +73,6 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
       jsonFile = File('${directory.path}/exerciseByItem.json');
       _fileExists = jsonFile.existsSync();
       if(_fileExists){
-        print("exercise by item file exists");
-        print("file" + json.decode(jsonFile.readAsStringSync())['data'].toString());
       } else{
         createFile();
       }
@@ -86,10 +81,8 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
 
   void createFile(){
     var temp = {"data": {exer: {}}};
-    print("create file");
     File file = new File('${dir.path}/exerciseByItem.json');
     file.createSync();
-    print(json.encode(temp).toString());
     file.writeAsStringSync(json.encode(temp));
     _fileExists = true;
   }
@@ -106,7 +99,6 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
         for(Map<String, dynamic> item in jsonFileContent['data'][formatDate]){
           if(item["Exercise"] == exercise && item["Seconds"] == duration && item["Completed"] == false){
             item["Completed"] = true;
-            print(item.toString());
             break;
           }
         }
@@ -114,31 +106,14 @@ class _TimerState extends State<Timers> with TickerProviderStateMixin{ // body
           jsonFileCont['data'][exercise] = {date: duration};
         } else if(jsonFileCont['data'][exercise][date] == null){
           jsonFileCont['data'][exercise][date] = duration;
-          print("not this thing " + jsonFileCont['data'][exercise].toString());
         } else{
-          print("this thing " + jsonFileCont['data'][exercise].toString());
           jsonFileCont['data'][exercise][date] += duration;
-          
         }
         exerjsonFile.writeAsStringSync(json.encode(jsonFileContent));
         jsonFile.writeAsStringSync(json.encode(jsonFileCont));
       }
-      setState(() {
-      });
     });
   }
-  /* void writeExercise(DateTime date, String exercise, int seconds, int amount, bool completed){
-    date = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
-    print("write to file");
-    Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Amount": amount, "Completed": completed};
-    if(_fileExists){
-      print("file exists");
-      
-    } else{
-      print("file no exist");
-      createFile(content, date);
-    }
-  } */
 
   startTimer() {
     timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {

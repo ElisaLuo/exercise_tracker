@@ -1,8 +1,6 @@
-import 'package:exercise_tracker/manageExercises.dart';
 import 'package:flutter/material.dart';
 import './calendar.dart';
 import './analysis.dart';
-import './manageExercises.dart';
 
 void main() => runApp(MyApp());
 

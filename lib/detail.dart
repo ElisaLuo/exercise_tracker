@@ -59,7 +59,6 @@ class _DetailPageState extends State<Detail> {
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync())['data'];
         });
-        print(_exerciseContent.toString());
         List<dynamic> times = _exerciseContent[widget.exers].keys.toList();
         for(int i = 0; i < times.length; i++){
           var time = DateTime.parse(times[i]);
@@ -75,10 +74,8 @@ class _DetailPageState extends State<Detail> {
 
   void createFile(){
     var temp = {"data": {}};
-    print("create file");
     File file = new File('${dir.path}/exerciseByItem.json');
     file.createSync();
-    print(json.encode(temp).toString());
     file.writeAsStringSync(json.encode(temp));
     _fileExists = true;
   }
@@ -111,11 +108,12 @@ class _DetailPageState extends State<Detail> {
 
     _buildList(BuildContext context){
       return ListView.builder(
+        physics: BouncingScrollPhysics(),
         itemCount: data.length,
         itemBuilder: (context, index){
           return ListTile(
-            title: Text(new DateFormat('yyyy-MM-dd').format(data[index].date)),
-            subtitle: Text('Total ${data[index].time} seconds'),
+            title: Text(new DateFormat('yyyy-MM-dd').format(data[data.length - index - 1].date)),
+            subtitle: Text('Total ${data[data.length - index - 1].time} seconds'),
             contentPadding: EdgeInsets.only(left: 30),
           );
         },

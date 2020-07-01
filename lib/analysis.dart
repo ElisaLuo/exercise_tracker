@@ -51,7 +51,6 @@ class _AnalysisState extends State<Analysis> { // body
           _exerciseContent = json.decode(jsonFile.readAsStringSync())['data'];
           _exercises = json.decode(jsoFile.readAsStringSync())['data'].cast<String>();
         });
-        print("exercises"+_exercises.toString());
         allExercise = _exerciseContent.keys.toList();
         for(int i = 0; i < _exercises.length; i++){
           allInfo.add([]);
@@ -66,9 +65,6 @@ class _AnalysisState extends State<Analysis> { // body
           }
         }
         
-          
-        
-        print(allInfo.toString());
       } else if(_fileExists && !_jsfileExists){
         createExerciseFile();
       } else if(_jsfileExists && !_fileExists){
@@ -84,28 +80,22 @@ class _AnalysisState extends State<Analysis> { // body
 
   void createFile(){
     var temp = {"data": {}};
-    print("create file");
     File file = new File('${dir.path}/exerciseByItem.json');
     file.createSync();
-    print(json.encode(temp).toString());
     file.writeAsStringSync(json.encode(temp));
     _fileExists = true;
   }
 
   void createExerciseFile(){
     var temp = {"data": []};
-    print("create file");
     File file = new File('${dir.path}/exercises.json');
     file.createSync();
-    print(json.encode(temp).toString());
     file.writeAsStringSync(json.encode(temp));
     _jsfileExists = true;
   }
 
   void removeExercise(int index){
-    print('delete exercise from file');
     if(_jsfileExists){
-      print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsoFile.readAsStringSync());
       jsonFileContent['data'].removeAt(index);
       jsoFile.writeAsStringSync(json.encode(jsonFileContent));
@@ -113,9 +103,7 @@ class _AnalysisState extends State<Analysis> { // body
   }
 
   void addExercise(String exercise){
-    print('add exercise into file');
     if(_jsfileExists){
-      print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsoFile.readAsStringSync());
       jsonFileContent['data'].add(exercise);
       jsoFile.writeAsStringSync(json.encode(jsonFileContent));

@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:exercise_tracker/timer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -64,7 +63,6 @@ class _CalendarPageState extends State<Calendar> {
           _exerciseContent = json.decode(jsonFile.readAsStringSync());
           _exercises = json.decode(jsFile.readAsStringSync())['data'].cast<String>();
         });
-        print(_exerciseContent['data'].toString());
         var _keyslist = _exerciseContent['data'].keys.toList();
         for(var i = 0; i < _keyslist.length; i++){
           var _currentDate = _keyslist[i];
@@ -86,8 +84,6 @@ class _CalendarPageState extends State<Calendar> {
         _selectedEvents = _events[_selectedDay] ?? [];
         _selectedCompleted = _completed[_selectedDay] ?? [];
       });
-      print(_completed);
-      print(_selectedCompleted);
     });
   }
 
@@ -100,7 +96,6 @@ class _CalendarPageState extends State<Calendar> {
         this.setState((){
           _exerciseContent = json.decode(jsonFile.readAsStringSync());
         });
-        print(_exerciseContent['data'].toString());
         var _keyslist = _exerciseContent['data'].keys.toList();
         for(var i = 0; i < _keyslist.length; i++){
           var _currentDate = _keyslist[i];
@@ -119,15 +114,12 @@ class _CalendarPageState extends State<Calendar> {
         _completed = _completed;
         _selectedCompleted = _completed[_selectedDay] ?? [];
       });
-      print(_completed);
-      print(_selectedCompleted);
     });
   }
 
   void createFile(Map<String, dynamic> content, DateTime date){
     String datestring = date.toString();
     var temp = {"data": {datestring: [content]}};
-    print("create file");
     File file = new File('${dir.path}/exerciseTrack.json');
     file.createSync();
     file.writeAsStringSync(json.encode(temp));
@@ -143,10 +135,8 @@ class _CalendarPageState extends State<Calendar> {
 
   void writeExercise(DateTime date, String exercise, int seconds, bool completed){
     date = DateTime.parse(DateFormat('yyyy-MM-dd').format(date));
-    print("write to file");
     Map<String, dynamic> content = {"Exercise": exercise, "Seconds": seconds, "Completed": completed};
     if(_fileExists){
-      print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
       if(jsonFileContent['data'][date.toString()] == null){
         jsonFileContent['data'][date.toString()] = [];
@@ -154,19 +144,15 @@ class _CalendarPageState extends State<Calendar> {
       jsonFileContent['data'][date.toString()].add(content);
       jsonFile.writeAsStringSync(json.encode(jsonFileContent));
     } else{
-      print("file no exist");
       createFile(content, date);
     }
     this.setState((){
       _exerciseContent = json.decode(jsonFile.readAsStringSync());
     });
-    print(_exerciseContent);
   }
 
   void removeExercise(DateTime date, int index){
-    print('delete exercise from file');
     if(_fileExists){
-      print("file exists");
       Map<String, dynamic> jsonFileContent = json.decode(jsonFile.readAsStringSync());
       jsonFileContent['data'][date.toString()].removeAt(index);
       _completed[date].removeAt(index);
@@ -213,7 +199,6 @@ class _CalendarPageState extends State<Calendar> {
   }
 
   createAddDialog(BuildContext context) {
-    print(_exercises.toString());
     _exercises = json.decode(jsFile.readAsStringSync())['data'].cast<String>();
     return showDialog(
       context: context,
@@ -258,6 +243,10 @@ class _CalendarPageState extends State<Calendar> {
           _selectedCompleted = _completed[_selectedDay];
         });
       },
+      calendarStyle: CalendarStyle(
+        selectedColor: Colors.blueAccent,
+        todayColor: Colors.blueAccent[100]
+      ),
     );
   }
 
@@ -299,7 +288,6 @@ class _CalendarPageState extends State<Calendar> {
               style: TextStyle(color: getColors(_selectedCompleted[index-1]))
             ),
             onTap: () {
-              print('Entry ${_selectedEvents[index-1]}');
             },
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -354,32 +342,6 @@ class _CalendarPageState extends State<Calendar> {
         }
         
       },
-    );
-  }
-
-  Widget _speedDial(){
-    return SpeedDial(
-      animatedIcon: AnimatedIcons.menu_close,
-      animatedIconTheme: IconThemeData(size: 22.0),
-      children: [
-        SpeedDialChild(
-          child: Icon(Icons.play_arrow),
-          label: 'Start Workout',
-          onTap: () {
-            Navigator.push(
-              context, 
-                MaterialPageRoute(
-                  builder: (context) => TimerPage(dur: "1, 2"),
-                )
-              );
-          }
-        ),
-        SpeedDialChild(
-          child: Icon(Icons.add),
-          label: 'Add Exercise',
-          onTap: () => createAddDialog(context)
-        ),
-      ],
     );
   }
 
